@@ -67,6 +67,8 @@ h1{font-size:22px;margin:0 0 4px;color:#111;font-weight:700}
 <div class="toast" id="toast"></div>
 
 <script>
+// 兜底地址（脚本会更新）；必须最先定义，供上方/下方都能用
+var FALLBACK = "__ADDR__";
 // 密码校验（SHA-256，前端不存明文）
 const PW_HASH = "8e98375dc76baccafdc39b485dc9cb56273f2e4232d9a33dc9d91f2e0dae9c07"; // jintian2026
 async function sha256(s){
@@ -93,8 +95,7 @@ function showContent(){
   inp.focus();
 })();
 
-// 读取同目录 address.json 里的真实地址；本地内置一份兜底（脚本会更新它）
-const FALLBACK = "__ADDR__";
+// 读取同目录 address.json 里的真实地址
 function setAddr(url, note){
   const addrEl = document.getElementById('addr');
   const enter = document.getElementById('enter');
