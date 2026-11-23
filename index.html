@@ -38,26 +38,61 @@ h1{font-size:22px;margin:0 0 4px;color:#111;font-weight:700}
   <h1>今日待办</h1>
   <p class="sub">网页版访问入口</p>
 
-  <div class="addrbox">
-    <div class="addrlabel">当前最新地址</div>
-    <div class="addr" id="addr">加载中…</div>
+  <!-- 密码锁 -->
+  <div id="lock">
+    <input id="pw" type="password" placeholder="请输入访问密码" autocomplete="current-password"
+      style="width:100%;height:46px;border:1px solid #DDD;border-radius:11px;padding:0 14px;font-size:16px;outline:none;margin-bottom:12px;font-family:inherit">
+    <button class="enter" id="unlock" style="border:0;cursor:pointer;font-family:inherit">进入</button>
+    <div id="pwmsg" style="color:#E5483C;font-size:13px;height:18px;margin-top:6px"></div>
   </div>
 
-  <a class="enter" id="enter" href="#" target="_blank" rel="noopener">进入今日待办 →</a>
-  <div class="btnrow">
-    <button class="copy" id="copy">复制地址</button>
-    <button class="copy" id="refresh">🔄 刷新</button>
-  </div>
-
-  <div class="tip">
-    这个地址可能随网络变化自动更新。<br>
-    记不住就收藏本页，从这里进去永远是最新的。
-    <div class="badge" id="status">正在获取最新地址…</div>
+  <!-- 密码正确后显示 -->
+  <div id="content" style="display:none">
+    <div class="addrbox">
+      <div class="addrlabel">当前最新地址</div>
+      <div class="addr" id="addr">加载中…</div>
+    </div>
+    <a class="enter" id="enter" href="#" target="_blank" rel="noopener">进入今日待办 →</a>
+    <div class="btnrow">
+      <button class="copy" id="copy">复制地址</button>
+      <button class="copy" id="refresh">🔄 刷新</button>
+    </div>
+    <div class="tip">
+      这个地址可能随网络变化自动更新。<br>
+      记不住就收藏本页，从这里进去永远是最新的。
+      <div class="badge" id="status">正在获取最新地址…</div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
+// 密码校验（SHA-256，前端不存明文）
+const PW_HASH = "8e98375dc76baccafdc39b485dc9cb56273f2e4232d9a33dc9d91f2e0dae9c07"; // jintian2026
+async function sha256(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function showContent(){
+  document.getElementById('lock').style.display='none';
+  document.getElementById('content').style.display='block';
+  setAddr(FALLBACK);
+  pullAddress(false);
+}
+(async function(){
+  try{ if(localStorage.getItem('td_broadcast_ok')==='1'){ showContent(); return; } }catch(e){}
+  const inp=document.getElementById('pw'), btn=document.getElementById('unlock'), msg=document.getElementById('pwmsg');
+  async function tryUnlock(){
+    const v=inp.value; if(!v){ msg.textContent='请输入密码'; return; }
+    const h=await sha256(v);
+    if(h===PW_HASH){ try{localStorage.setItem('td_broadcast_ok','1');}catch(e){} showContent(); }
+    else { msg.textContent='密码不正确'; }
+  }
+  btn.onclick=tryUnlock;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+  inp.focus();
+})();
+
 // 读取同目录 address.json 里的真实地址；本地内置一份兜底（脚本会更新它）
 const FALLBACK = "__ADDR__";
 function setAddr(url, note){
@@ -95,8 +130,6 @@ function pullAddress(manual){
     })
     .catch(() => { if(manual) toast('刷新失败，请稍后再试'); });
 }
-setAddr(FALLBACK);
-pullAddress(false);
 // 刷新按钮
 let refreshing = false;
 document.getElementById('refresh').onclick = () => {
