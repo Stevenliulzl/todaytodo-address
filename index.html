@@ -80,12 +80,12 @@ function showContent(){
   pullAddress(false);
 }
 (async function(){
-  try{ if(localStorage.getItem('td_broadcast_ok')==='1'){ showContent(); return; } }catch(e){}
+  try{ var exp=Number(localStorage.getItem('td_broadcast_exp')||0); if(exp>Date.now()){ showContent(); return; } }catch(e){}
   const inp=document.getElementById('pw'), btn=document.getElementById('unlock'), msg=document.getElementById('pwmsg');
   async function tryUnlock(){
     const v=inp.value; if(!v){ msg.textContent='请输入密码'; return; }
     const h=await sha256(v);
-    if(h===PW_HASH){ try{localStorage.setItem('td_broadcast_ok','1');}catch(e){} showContent(); }
+    if(h===PW_HASH){ try{localStorage.setItem('td_broadcast_exp', String(Date.now()+30*24*3600*1000));}catch(e){} showContent(); }
     else { msg.textContent='密码不正确'; }
   }
   btn.onclick=tryUnlock;
